@@ -9,11 +9,20 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
+const printOut = (tag) => (data) => console.log(tag, data);
+
 // Now that you are connected, you can join channels with a topic:
 const id = Math.floor(Math.random() * 50000)
 let channel = socket.channel(`demo:${id}`, {})
 channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
+  .receive("ok", resp => {
+    console.log("Joined successfully", resp)
+
+    channel.push("ping", {}, 30000)
+      .receive("ok", printOut("ok"))
+      .receive("error", printOut("error"))
+      .receive("timeout", printOut("timeout"))
+  })
   .receive("error", resp => { console.log("Unable to join", resp) })
 
 export default socket

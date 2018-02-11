@@ -21,6 +21,7 @@ defmodule WebsocketDemoWeb.DemoChannelTest do
 
       ref = push(socket, "ping", %{})
       assert_reply(ref, :ok, %{response: "pong"}, 1000)
+
       leave(socket)
     end
   end
