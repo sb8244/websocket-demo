@@ -24,14 +24,4 @@ defmodule WebsocketDemoWeb.ChannelCase do
       @endpoint WebsocketDemoWeb.Endpoint
     end
   end
-
-
-  setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WebsocketDemo.Repo)
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(WebsocketDemo.Repo, {:shared, self()})
-    end
-    :ok
-  end
-
 end
