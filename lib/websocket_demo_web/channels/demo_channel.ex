@@ -8,16 +8,19 @@ defmodule WebsocketDemoWeb.DemoChannel do
     {:ok, socket}
   end
 
+  # Immediate pings will reply inline
   def handle_in("ping", _params, socket) do
     {:reply, {:ok, %{response: "pong"}}, socket}
   end
 
+  # Delayed pings will not reply inline, and instead switch to an async model
   def handle_in("ping:" <> duration_string, _params, socket) do
     duration = String.to_integer(duration_string)
     Process.send_after(self(), {"ping", duration}, duration)
     {:noreply, socket}
   end
 
+  # Once we receive this command, we know that the socket needs to be pushed a message
   def handle_info({"ping", delay}, socket) do
     push socket, "pong", %{delay: delay}
     {:noreply, socket}
