@@ -18,11 +18,17 @@ channel.join()
   .receive("ok", resp => {
     console.log("Joined successfully", resp)
 
-    channel.push("ping", {}, 30000)
+    channel.push("ping", {})
       .receive("ok", printOut("ok"))
       .receive("error", printOut("error"))
       .receive("timeout", printOut("timeout"))
+
+    channel.push("ping:1000", {})
+    channel.push("ping:2000", {})
+    channel.push("ping:3000", {})
   })
   .receive("error", resp => { console.log("Unable to join", resp) })
+
+channel.on("pong", printOut("pong async response"))
 
 export default socket
