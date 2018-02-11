@@ -5,6 +5,13 @@ defmodule WebsocketDemoWeb.DemoChannel do
   intercept ["ping"]
 
   def join("demo:" <> _id, _params, socket) do
+    timer_ref = Process.send(self(), :tick, [])
+
+    socket =
+      socket
+      |> assign(:current_tick, 0)
+      |> assign(:tick_timer, timer_ref)
+
     {:ok, socket}
   end
 
@@ -24,5 +31,18 @@ defmodule WebsocketDemoWeb.DemoChannel do
   def handle_info({"ping", delay, ref}, socket) do
     reply ref, {:ok, %{delay: delay, response: "pong"}}
     {:noreply, socket}
+  end
+
+  # We can async handle messages to this process and push websocket events down
+  def handle_info(:tick, socket = %{assigns: %{current_tick: tick}}) do
+    push socket, "tick", %{value: tick}
+    timer_ref = Process.send_after(self(), :tick, 5000)
+
+    new_socket =
+      socket
+      |> assign(:current_tick, tick + 1)
+      |> assign(:tick_timer, timer_ref)
+
+    {:noreply, new_socket}
   end
 end

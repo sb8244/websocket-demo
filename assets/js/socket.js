@@ -31,4 +31,6 @@ channel.join()
   })
   .receive("error", resp => { console.log("Unable to join", resp) })
 
+channel.on("tick", printOut("ticked"))
+
 export default socket

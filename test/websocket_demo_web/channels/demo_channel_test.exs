@@ -11,6 +11,28 @@ defmodule WebsocketDemoWeb.DemoChannelTest do
 
       leave(socket)
     end
+
+    test "a tick is immediately invoked" do
+      {:ok, _, _socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      expected = %{value: 0}
+      assert_push("tick", ^expected)
+    end
+  end
+
+  describe "handle_info :tick" do
+    test "another tick is invoked for 5s from now" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      assert :sys.get_state(socket.channel_pid).assigns.current_tick == 1
+      Process.send(socket.channel_pid, :tick, [])
+      assert :sys.get_state(socket.channel_pid).assigns.current_tick == 2
+      assert Process.read_timer(socket.assigns.tick_timer) == 5000
+    end
   end
 
   describe "handle_in ping" do
