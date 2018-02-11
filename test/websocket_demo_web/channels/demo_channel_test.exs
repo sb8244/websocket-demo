@@ -32,11 +32,13 @@ defmodule WebsocketDemoWeb.DemoChannelTest do
         socket(nil, %{})
         |> subscribe_and_join(DemoChannel, "demo:1")
 
-      push(socket, "ping:300", %{})
+      ref = push(socket, "ping:300", %{})
 
-      expected = %{delay: 300}
-      refute_push "pong", ^expected, 250
-      assert_push "pong", ^expected, 55 # give a few ms for the message to arrive
+      expected = %{delay: 300, response: "pong"}
+
+      # Give a few ms between when we expect it to receive, to account for async
+      refute_reply(ref, :ok, ^expected, 299)
+      assert_reply(ref, :ok, ^expected, 10)
 
       leave(socket)
     end

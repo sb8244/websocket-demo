@@ -25,13 +25,10 @@ channel.join()
 
     // Known async messages, so the response can't be handled inline
     // This is contrived for the demo purposes
-    channel.push("ping:1000", {})
-    channel.push("ping:2000", {})
-    channel.push("ping:3000", {})
+    channel.push("ping:1000", {}).receive("ok", printOut("delayed"))
+    channel.push("ping:2000", {}).receive("ok", printOut("delayed"))
+    channel.push("ping:3000", {}).receive("ok", printOut("delayed"))
   })
   .receive("error", resp => { console.log("Unable to join", resp) })
-
-// Response from the async messages
-channel.on("pong", printOut("pong async response"))
 
 export default socket
