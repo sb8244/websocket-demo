@@ -1,20 +1,34 @@
-# WebsocketDemo
+# Websocket Demo
 
-To start your Phoenix server:
+This repo is a demo of very basic websocket concepts. The demonstrated concepts are:
+
+* Socket connection
+* Reply immediately to commands
+* Reply asynchronously to commands
+* Handle completely out of band requests (tick once per 5s)
+
+## Installation / Demo
+
+To start the demo:
 
   * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `cd assets && npm install`
-  * Start Phoenix endpoint with `mix phx.server`
+  * Start Phoenix endpoint with `iex -S mix phx.server`
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser. Open up
+the console to view the output.
 
-Ready to run in production? Please [check our deployment guides](http://www.phoenixframework.org/docs/deployment).
+You can run `:observer.start` in the console to view the processes, such as what happens
+when a websocket connects.
 
-## Learn more
+## Console Output
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: http://phoenixframework.org/docs/overview
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+```
+socket.js:28 Joined successfully {}
+socket.js:20 ticked {value: 0}
+socket.js:20 ok {response: "pong"}
+socket.js:20 delayed {response: "pong", delay: 1000}
+socket.js:20 delayed {response: "pong", delay: 2000}
+socket.js:20 delayed {response: "pong", delay: 3000}
+socket.js:20 ticked {value: 1}
+```
