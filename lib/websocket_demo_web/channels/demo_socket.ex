@@ -1,8 +1,8 @@
-defmodule WebsocketDemoWeb.UserSocket do
+defmodule WebsocketDemoWeb.DemoSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", WebsocketDemoWeb.RoomChannel
+  channel "demo:*", WebsocketDemoWeb.DemoChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
