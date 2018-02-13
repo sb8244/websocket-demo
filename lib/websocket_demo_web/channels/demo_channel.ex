@@ -2,7 +2,7 @@ defmodule WebsocketDemoWeb.DemoChannel do
   require Logger
   use Phoenix.Channel
 
-  intercept ["ping"]
+  intercept []
 
   def join("demo:" <> _id, _params, socket) do
     timer_ref = Process.send(self(), :tick, [])
