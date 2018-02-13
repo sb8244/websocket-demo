@@ -2,7 +2,7 @@ defmodule WebsocketDemoWeb.DemoChannel do
   require Logger
   use Phoenix.Channel
 
-  intercept []
+  intercept ["debounce_ping"]
 
   def join("demo:" <> _id, _params, socket) do
     timer_ref = Process.send(self(), :tick, [])
@@ -11,6 +11,7 @@ defmodule WebsocketDemoWeb.DemoChannel do
       socket
       |> assign(:current_tick, 0)
       |> assign(:tick_timer, timer_ref)
+      |> assign(:debounce_ping_debounce_state, :idle)
 
     {:ok, socket}
   end
@@ -44,5 +45,39 @@ defmodule WebsocketDemoWeb.DemoChannel do
       |> assign(:tick_timer, timer_ref)
 
     {:noreply, new_socket}
+  end
+
+  def handle_info(:debounce_ping, socket = %{assigns: %{debounce_ping_debounce_state: :debouncing}}) do
+    new_socket =
+      socket
+      |> assign(:debounce_ping_debounce_state, :idle)
+      |> assign(:debounce_ping_debounce_timer, nil)
+
+    {:noreply, new_socket}
+  end
+
+  def handle_info(:debounce_ping, socket = %{assigns: %{debounce_ping_debounce_state: :called}}) do
+    {:noreply, handle_debounce_ping_call(socket)}
+  end
+
+  def handle_out("debounce_ping", _, socket = %{assigns: %{debounce_ping_debounce_state: :idle}}) do
+    {:noreply, handle_debounce_ping_call(socket)}
+  end
+
+  def handle_out("debounce_ping", _, socket = %{assigns: %{debounce_ping_debounce_state: :debouncing}}) do
+    {:noreply, assign(socket, :debounce_ping_debounce_state, :called)}
+  end
+
+  def handle_out("debounce_ping", _, socket = %{assigns: %{debounce_ping_debounce_state: :called}}) do
+    {:noreply, socket}
+  end
+
+  defp handle_debounce_ping_call(socket) do
+    push socket, "debounce_ping", %{}
+    timer = Process.send_after(self(), :debounce_ping, 3000)
+
+    socket
+      |> assign(:debounce_ping_debounce_state, :debouncing)
+      |> assign(:debounce_ping_debounce_timer, timer)
   end
 end

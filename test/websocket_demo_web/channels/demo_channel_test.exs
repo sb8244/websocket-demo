@@ -31,7 +31,7 @@ defmodule WebsocketDemoWeb.DemoChannelTest do
       assert :sys.get_state(socket.channel_pid).assigns.current_tick == 1
       Process.send(socket.channel_pid, :tick, [])
       assert :sys.get_state(socket.channel_pid).assigns.current_tick == 2
-      assert Process.read_timer(socket.assigns.tick_timer) == 5000
+      assert_in_delta Process.read_timer(socket.assigns.tick_timer), 5000, 10
     end
   end
 
@@ -63,6 +63,96 @@ defmodule WebsocketDemoWeb.DemoChannelTest do
       assert_reply(ref, :ok, ^expected, 10)
 
       leave(socket)
+    end
+  end
+
+  describe "handle_out debounce_ping" do
+    test "state=idle, the socket receives an immediate push" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+    end
+
+    test "state=idle, the timer is setup for 3s from now, and sets the next state" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert_in_delta Process.read_timer(state.debounce_ping_debounce_timer), 3000, 10
+      assert state.debounce_ping_debounce_state == :debouncing
+    end
+
+    test "state=debouncing, the state is set to called" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+      broadcast_from! socket, "debounce_ping", %{}
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert_in_delta Process.read_timer(state.debounce_ping_debounce_timer), 3000, 10
+      assert state.debounce_ping_debounce_state == :called
+    end
+
+    test "state=called, the state is not changed" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+      broadcast_from! socket, "debounce_ping", %{}
+      broadcast_from! socket, "debounce_ping", %{}
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert_in_delta Process.read_timer(state.debounce_ping_debounce_timer), 3000, 10
+      assert state.debounce_ping_debounce_state == :called
+    end
+  end
+
+  describe "handle_info :debounce_ping" do
+    test "from state=debouncing, sets the state to idle without a push" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+
+      send socket.channel_pid, :debounce_ping
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert state.debounce_ping_debounce_timer == nil
+      assert state.debounce_ping_debounce_state == :idle
+    end
+
+    test "from state=called, sets the state to debouncing with a push" do
+      {:ok, _, socket} =
+        socket(nil, %{})
+        |> subscribe_and_join(DemoChannel, "demo:1")
+
+      broadcast_from! socket, "debounce_ping", %{}
+      assert_push "debounce_ping", %{}
+      broadcast_from! socket, "debounce_ping", %{}
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert state.debounce_ping_debounce_state == :called
+
+      send socket.channel_pid, :debounce_ping
+      assert_push "debounce_ping", %{}
+
+      state = :sys.get_state(socket.channel_pid).assigns
+      assert_in_delta Process.read_timer(state.debounce_ping_debounce_timer), 3000, 10
+      assert state.debounce_ping_debounce_state == :debouncing
     end
   end
 end
